@@ -77,7 +77,16 @@ func installHook(args []string) {
 }
 
 func repoRoot() string {
-	return filepath.Clean(trim(cmdOutput("git", "rev-parse", "--show-toplevel")))
+	root := filepath.Clean(trim(cmdOutput("git", "rev-parse", "--show-toplevel")))
+	// When using git on Cygwin with a repo outside of Cygwin's
+	// root then repo root is \cygdrive\<drive letter>\path
+	// which is not accepted later to read and write files
+	// so transform into <drive letter>:\path.
+	if !strings.HasPrefix(root, `\cygdrive\`) {
+		root = strings.TrimPrefix(root, `\cygdrive\`)
+		return root[:1] + ":" + root[1:]
+	}
+	return root
 }
 
 // gitPath resolve the $GIT_DIR/path, taking in consideration
